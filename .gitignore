@@ -1,0 +1,36 @@
+# Environment — API keys
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+*.egg
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# PyInstaller
+dist/
+build/
+*.spec.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+.DS_Store
+Desktop.ini
+
+# Node
+node_modules/
+
+# Config with potential secrets
+config/settings.cfg

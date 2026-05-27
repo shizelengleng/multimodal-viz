@@ -1,0 +1,197 @@
+{
+  "title": "Docker容器本地部署AI Agent完整指南",
+  "source": "text_file",
+  "layout_hint": "hierarchical",
+  "concepts": [
+    {
+      "id": "c1",
+      "name": "Docker Model Runner",
+      "description": "Docker推出的本地运行LLM模型的工具，兼容OpenAI API，支持多种模型如ai/smollm2、ai/gemma3等",
+      "category": "definition",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c2",
+      "name": "Docker MCP Gateway",
+      "description": "通过Model Context Protocol连接外部工具和服务的网关组件，支持duckduckgo、filesystem等工具",
+      "category": "definition",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c3",
+      "name": "Docker cagent",
+      "description": "声明式YAML多Agent运行时，无需手写代码，支持定义多个Agent角色和工具集",
+      "category": "definition",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c4",
+      "name": "Docker Offload",
+      "description": "提供GPU加速云端环境的工具，用于提升AI Agent运行性能",
+      "category": "definition",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c5",
+      "name": "Docker Compose",
+      "description": "定义和运行多容器AI应用的统一编排工具，支持集成模型、工具网关和Web UI",
+      "category": "definition",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c6",
+      "name": "方案一：自定义Agent",
+      "description": "适合Python开发者，使用Docker Model Runner加自定义代码编写Agent逻辑",
+      "category": "example",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c7",
+      "name": "方案二：零代码cagent",
+      "description": "推荐方案，通过YAML声明式定义多Agent，无需编写代码即可运行",
+      "category": "example",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c8",
+      "name": "方案三：Compose多服务",
+      "description": "适合完整Agent应用，通过Docker Compose集成模型、工具网关和Web界面",
+      "category": "example",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c9",
+      "name": "方案四：Goose简易方案",
+      "description": "使用Goose开源框架加Docker快速构建带浏览器界面的AI助手",
+      "category": "example",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c10",
+      "name": "硬件要求",
+      "description": "不同模型对显存和存储的需求，从ai/smollm2的1GB显存到ai/qwen3-30b的16GB以上显存",
+      "category": "principle",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c11",
+      "name": "MCP协议",
+      "description": "Model Context Protocol，通过--servers参数启用duckduckgo、context7、filesystem等工具",
+      "category": "principle",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c12",
+      "name": "安全沙盒",
+      "description": "Agent生成的代码应在隔离容器中运行，可禁用网络防止数据泄露",
+      "category": "principle",
+      "difficulty": "advanced"
+    },
+    {
+      "id": "c13",
+      "name": "混合AI模式",
+      "description": "本地小模型处理常规任务，远程大模型处理复杂推理，可降低5至30倍成本",
+      "category": "principle",
+      "difficulty": "advanced"
+    },
+    {
+      "id": "c14",
+      "name": "推荐学习路径",
+      "description": "从安装Docker Desktop开始，逐步体验模型运行、零代码Agent、多Agent架构和自定义配置",
+      "category": "process",
+      "difficulty": "basic"
+    }
+  ],
+  "relations": [
+    {
+      "source": "c1",
+      "target": "c6",
+      "type": "part_of",
+      "label": "构成方案一的核心"
+    },
+    {
+      "source": "c3",
+      "target": "c7",
+      "type": "part_of",
+      "label": "构成方案二的核心"
+    },
+    {
+      "source": "c5",
+      "target": "c8",
+      "type": "part_of",
+      "label": "构成方案三的核心"
+    },
+    {
+      "source": "c2",
+      "target": "c8",
+      "type": "part_of",
+      "label": "用于方案三的工具网关"
+    },
+    {
+      "source": "c1",
+      "target": "c10",
+      "type": "relates_to",
+      "label": "依赖硬件资源"
+    },
+    {
+      "source": "c2",
+      "target": "c11",
+      "type": "relates_to",
+      "label": "基于MCP协议"
+    },
+    {
+      "source": "c12",
+      "target": "c13",
+      "type": "relates_to",
+      "label": "安全策略与混合模式相关"
+    },
+    {
+      "source": "c14",
+      "target": "c1",
+      "type": "prerequisite_of",
+      "label": "学习路径第一步"
+    },
+    {
+      "source": "c14",
+      "target": "c7",
+      "type": "leads_to",
+      "label": "学习路径后续步骤"
+    },
+    {
+      "source": "c14",
+      "target": "c8",
+      "type": "leads_to",
+      "label": "学习路径进阶步骤"
+    },
+    {
+      "source": "c6",
+      "target": "c7",
+      "type": "contrasts_with",
+      "label": "编码方案对比零代码方案"
+    },
+    {
+      "source": "c7",
+      "target": "c8",
+      "type": "contrasts_with",
+      "label": "单Agent对比多服务架构"
+    },
+    {
+      "source": "c9",
+      "target": "c6",
+      "type": "contrasts_with",
+      "label": "简易方案对比自定义方案"
+    },
+    {
+      "source": "c1",
+      "target": "c4",
+      "type": "relates_to",
+      "label": "可配合GPU加速"
+    },
+    {
+      "source": "c3",
+      "target": "c2",
+      "type": "relates_to",
+      "label": "通过MCP协议引用工具"
+    }
+  ]
+}

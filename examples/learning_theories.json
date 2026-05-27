@@ -1,0 +1,261 @@
+{
+  "title": "学习理论流派与教育应用",
+  "source": "text_file",
+  "layout_hint": "hierarchical",
+  "concepts": [
+    {
+      "id": "c1",
+      "name": "学习理论",
+      "description": "教育心理学的核心内容，解释学习如何发生的系统理论。",
+      "category": "definition",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c2",
+      "name": "行为主义",
+      "description": "强调可观察行为变化，认为学习是刺激-反应联结的形成过程。",
+      "category": "theory",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c3",
+      "name": "华生",
+      "description": "行为主义学习理论的创立者。",
+      "category": "person",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c4",
+      "name": "斯金纳",
+      "description": "发展操作性条件反射理论，设计程序教学机器，对教育技术影响深远。",
+      "category": "person",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c5",
+      "name": "操作性条件反射",
+      "description": "通过强化和惩罚塑造行为的理论，正强化增加行为频率。",
+      "category": "principle",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c6",
+      "name": "认知主义",
+      "description": "关注学习者内部心理过程，将学习视为信息加工和知识建构。",
+      "category": "theory",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c7",
+      "name": "皮亚杰",
+      "description": "提出认知发展阶段理论，包括感知运动、前运算、具体运算和形式运算阶段。",
+      "category": "person",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c8",
+      "name": "布鲁纳",
+      "description": "提出发现学习法，强调学习者主动探索知识结构。",
+      "category": "person",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c9",
+      "name": "奥苏贝尔",
+      "description": "提出有意义学习理论，区分机械学习和有意义学习。",
+      "category": "person",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c10",
+      "name": "建构主义",
+      "description": "认为知识由学习者基于已有经验主动建构，而非客观存在。",
+      "category": "theory",
+      "difficulty": "basic"
+    },
+    {
+      "id": "c11",
+      "name": "维果茨基",
+      "description": "提出社会建构主义和最近发展区理论，强调社会文化环境的作用。",
+      "category": "person",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c12",
+      "name": "最近发展区",
+      "description": "教学应走在发展前面，在帮助下儿童能达到更高发展水平。",
+      "category": "principle",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c13",
+      "name": "加涅",
+      "description": "综合行为主义和认知主义，提出学习条件理论和学习结果分类。",
+      "category": "person",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c14",
+      "name": "学习结果分类",
+      "description": "将学习结果分为言语信息、智慧技能、认知策略、态度和动作技能五类。",
+      "category": "definition",
+      "difficulty": "advanced"
+    },
+    {
+      "id": "c15",
+      "name": "九段教学法",
+      "description": "加涅提出的教学设计步骤，广泛应用于教学设计中。",
+      "category": "process",
+      "difficulty": "advanced"
+    },
+    {
+      "id": "c16",
+      "name": "教育技术应用",
+      "description": "学习理论在程序教学、CAI、ITS、PBL等教学技术中的应用。",
+      "category": "application",
+      "difficulty": "intermediate"
+    },
+    {
+      "id": "c17",
+      "name": "联通主义",
+      "description": "面向数字时代的学习理论，强调节点和连接的重要性。",
+      "category": "theory",
+      "difficulty": "advanced"
+    },
+    {
+      "id": "c18",
+      "name": "乔治·西蒙斯",
+      "description": "联通主义的提出者，认为管道比内容更重要。",
+      "category": "person",
+      "difficulty": "advanced"
+    }
+  ],
+  "relations": [
+    {
+      "source": "c1",
+      "target": "c2",
+      "type": "part_of",
+      "label": "包含流派"
+    },
+    {
+      "source": "c1",
+      "target": "c6",
+      "type": "part_of",
+      "label": "包含流派"
+    },
+    {
+      "source": "c1",
+      "target": "c10",
+      "type": "part_of",
+      "label": "包含流派"
+    },
+    {
+      "source": "c2",
+      "target": "c3",
+      "type": "relates_to",
+      "label": "由华生创立"
+    },
+    {
+      "source": "c2",
+      "target": "c4",
+      "type": "relates_to",
+      "label": "由斯金纳发展"
+    },
+    {
+      "source": "c4",
+      "target": "c5",
+      "type": "relates_to",
+      "label": "提出操作性条件反射"
+    },
+    {
+      "source": "c6",
+      "target": "c7",
+      "type": "relates_to",
+      "label": "代表人物皮亚杰"
+    },
+    {
+      "source": "c6",
+      "target": "c8",
+      "type": "relates_to",
+      "label": "代表人物布鲁纳"
+    },
+    {
+      "source": "c6",
+      "target": "c9",
+      "type": "relates_to",
+      "label": "代表人物奥苏贝尔"
+    },
+    {
+      "source": "c10",
+      "target": "c11",
+      "type": "relates_to",
+      "label": "代表人物维果茨基"
+    },
+    {
+      "source": "c11",
+      "target": "c12",
+      "type": "relates_to",
+      "label": "提出最近发展区"
+    },
+    {
+      "source": "c13",
+      "target": "c14",
+      "type": "relates_to",
+      "label": "提出学习结果分类"
+    },
+    {
+      "source": "c13",
+      "target": "c15",
+      "type": "relates_to",
+      "label": "提出九段教学法"
+    },
+    {
+      "source": "c2",
+      "target": "c16",
+      "type": "leads_to",
+      "label": "影响程序教学和CAI"
+    },
+    {
+      "source": "c6",
+      "target": "c16",
+      "type": "leads_to",
+      "label": "推动智能教学系统"
+    },
+    {
+      "source": "c10",
+      "target": "c16",
+      "type": "leads_to",
+      "label": "支持PBL和认知学徒制"
+    },
+    {
+      "source": "c17",
+      "target": "c18",
+      "type": "relates_to",
+      "label": "由西蒙斯提出"
+    },
+    {
+      "source": "c6",
+      "target": "c2",
+      "type": "contrasts_with",
+      "label": "批判行为主义"
+    },
+    {
+      "source": "c10",
+      "target": "c6",
+      "type": "contrasts_with",
+      "label": "不同于认知主义"
+    },
+    {
+      "source": "c13",
+      "target": "c2",
+      "type": "relates_to",
+      "label": "综合行为主义观点"
+    },
+    {
+      "source": "c13",
+      "target": "c6",
+      "type": "relates_to",
+      "label": "综合认知主义观点"
+    }
+  ]
+}

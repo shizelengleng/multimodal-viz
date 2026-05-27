@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Docker容器本地部署AI Agent完全指南</title>
+<script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
+<style>
+:root {
+  --bg: #FDFAF7;
+  --card: #FFFFFF;
+  --orange: #F26B1D;
+  --orange-light: #FFF4EC;
+  --orange-dark: #D4550C;
+  --text: #2D2D2D;
+  --text-light: #7A7A7A;
+  --border: #E8E2DC;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --radius: 10px;
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ── Top bar ── */
+#topbar {
+  position:fixed; top:0; left:0; right:0; z-index:20;
+  display:flex; align-items:center; gap:10px;
+  padding:10px 20px; height:50px;
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+#topbar .logo {
+  font-size:15px; font-weight:700; color: var(--text);
+  margin-right:12px; white-space:nowrap; max-width:280px;
+  overflow:hidden; text-overflow:ellipsis;
+}
+.mode-btn {
+  padding:6px 14px; border-radius:7px;
+  border:1.5px solid var(--border);
+  background:transparent; color:var(--text-light);
+  font-size:13px; cursor:pointer; font-family:var(--font);
+  transition:all 0.18s;
+}
+.mode-btn:hover { border-color: var(--orange); color: var(--orange); }
+.mode-btn.active {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #FFF;
+}
+#search {
+  margin-left:auto;
+  background: var(--bg);
+  border:1.5px solid var(--border); border-radius:8px;
+  padding:7px 14px; color: var(--text); font-size:13px;
+  width:220px; outline:none; font-family:var(--font);
+}
+#search:focus { border-color: var(--orange); }
+#search::placeholder { color: #C0B8B0; }
+
+/* ── Panel ── */
+#panel {
+  position:fixed; left:0; top:50px; bottom:0; width:250px; z-index:15;
+  background: var(--card); border-right:1px solid var(--border);
+  padding:20px 16px; overflow-y:auto;
+  box-shadow: var(--shadow);
+}
+#panel h3 {
+  font-size:12px; color: var(--orange); text-transform:uppercase;
+  letter-spacing:0.1em; margin-bottom:14px; font-weight:700;
+}
+#panel .layer-row {
+  display:flex; align-items:center; gap:10px; padding:7px 8px;
+  border-radius:6px; cursor:pointer; font-size:13px; color:var(--text);
+  transition:background 0.15s;
+}
+#panel .layer-row:hover { background: var(--orange-light); }
+#panel .layer-row input { accent-color: var(--orange); }
+#panel .layer-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+#panel .layer-count {
+  margin-left:auto; font-size:11px; color:var(--text-light);
+  background:var(--bg); padding:2px 7px; border-radius:10px;
+}
+#panel .panel-actions { display:flex; gap:8px; margin-top:14px; }
+#panel .panel-actions button {
+  flex:1; padding:7px 0; border-radius:6px;
+  border:1.5px solid var(--border); background:transparent;
+  color:var(--text-light); font-size:11px; cursor:pointer; font-family:var(--font);
+}
+#panel .panel-actions button:hover { border-color: var(--orange); color: var(--orange); }
+#panel .explore-info {
+  font-size:12px; color:var(--text-light); line-height:1.6; margin-bottom:14px;
+}
+#panel .explore-actions { display:flex; gap:8px; }
+#panel .explore-actions button {
+  flex:1; padding:8px 0; border-radius:6px;
+  border:none; background:var(--orange-light); color:var(--orange-dark);
+  font-size:12px; cursor:pointer; font-weight:600; font-family:var(--font);
+}
+#panel .explore-actions button:hover { background: var(--orange); color:#FFF; }
+
+/* ── Network ── */
+#mynetwork {
+  position:fixed; top:50px; left:250px; right:0; bottom:0; z-index:5;
+}
+
+/* ── Detail sidebar ── */
+#sidebar {
+  position:fixed; right:0; top:0; width:360px; height:100vh;
+  background: var(--card); border-left:1px solid var(--border);
+  padding:32px 24px; overflow-y:auto; z-index:25;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+  transform:translateX(100%); transition:transform 0.3s ease;
+}
+#sidebar.open { transform:translateX(0); }
+#sidebar h2 { font-size:22px; margin-bottom:4px; color:var(--text); }
+#sidebar .category {
+  display:inline-block;
+  font-size:11px; text-transform:uppercase; letter-spacing:0.08em;
+  color: var(--orange); background:var(--orange-light);
+  padding:3px 10px; border-radius:12px; margin-bottom:14px;
+}
+#sidebar .description {
+  font-size:15px; line-height:1.7; color:var(--text-light); margin-bottom:20px;
+}
+#sidebar .related h3 {
+  font-size:12px; color: var(--orange); margin-bottom:10px;
+  text-transform:uppercase; letter-spacing:0.08em; font-weight:700;
+}
+#sidebar .related .rel-item {
+  display:flex; align-items:center; gap:8px; padding:9px 0;
+  border-bottom:1px solid var(--border); font-size:14px; color:var(--text);
+}
+#sidebar .related .rel-item .rel-dir { color:var(--orange); font-size:11px; min-width:16px; }
+#sidebar .related .rel-item .rel-label { color:var(--text-light); font-size:12px; }
+#close-btn {
+  position:absolute; top:14px; right:14px;
+  background:none; border:none; color:var(--text-light); font-size:20px;
+  cursor:pointer; width:32px; height:32px; display:flex;
+  align-items:center; justify-content:center; border-radius:50%;
+}
+#close-btn:hover { color:var(--orange); background:var(--orange-light); }
+
+/* ── Focus indicator ── */
+#focus-indicator {
+  position:fixed; top:60px; left:50%; transform:translateX(-50%); z-index:18;
+  background: var(--orange); color:#FFF;
+  font-size:12px; padding:6px 18px; border-radius:16px;
+  pointer-events:none; opacity:0; transition:opacity 0.3s;
+  font-weight:600;
+}
+#focus-indicator.show { opacity:1; }
+
+/* ── Legend ── */
+#legend {
+  position:fixed; bottom:16px; left:258px; z-index:10;
+  display:flex; gap:12px; flex-wrap:wrap;
+  background:var(--card); border-radius:8px; padding:8px 12px;
+  border:1px solid var(--border); box-shadow:var(--shadow);
+}
+.legend-item { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--text-light); }
+.legend-dot { width:8px; height:8px; border-radius:50%; }
+
+/* ── Export ── */
+#export-btn {
+  position:fixed; bottom:16px; right:16px; z-index:10;
+  background:var(--card); border:1.5px solid var(--orange);
+  color:var(--orange); border-radius:7px; padding:7px 16px;
+  font-size:12px; cursor:pointer; font-weight:600; font-family:var(--font);
+}
+#export-btn:hover { background:var(--orange); color:#FFF; }
+
+/* ── Explore badge ── */
+.explore-badge {
+  position:absolute; top:-6px; right:-6px;
+  background:var(--orange); color:#FFF;
+  font-size:10px; min-width:16px; height:16px; line-height:16px;
+  text-align:center; border-radius:8px; padding:0 4px;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <span class="logo">Docker容器本地部署AI Agent完全指南</span>
+  <button class="mode-btn active" id="btn-layer">图层</button>
+  <button class="mode-btn" id="btn-focus">焦点</button>
+  <button class="mode-btn" id="btn-explore">探索</button>
+  <input id="search" type="text" placeholder="搜索概念..." />
+</div>
+
+<div id="panel"></div>
+<div id="focus-indicator">点击空白处退出焦点 | 按 Esc 退出</div>
+<div id="mynetwork"></div>
+
+<div id="sidebar">
+  <button id="close-btn">&times;</button>
+  <h2 id="node-name"></h2>
+  <div class="category" id="node-category"></div>
+  <div class="description" id="node-desc"></div>
+  <div class="related">
+    <h3>关联概念</h3>
+    <div id="node-related"></div>
+  </div>
+</div>
+
+<div id="legend"></div>
+<button id="export-btn">导出 PNG</button>
+
+<script>
+// ── Data ──
+var rawData = {"nodes": [{"id": "c1", "label": "Docker Model Runner", "title": "<b>Docker Model Runner</b><br>Docker推出的本地运行LLM模型的工具，兼容OpenAI API，支持多种模型拉取和调用。<br><i>实际应用</i>", "group": "application", "value": 12, "desc": "Docker推出的本地运行LLM模型的工具，兼容OpenAI API，支持多种模型拉取和调用。", "category": "application", "difficulty": "basic"}, {"id": "c2", "label": "Docker MCP Gateway", "title": "<b>Docker MCP Gateway</b><br>通过Model Context Protocol连接外部工具和服务的网关组件，实现Agent与工具交互。<br><i>实际应用</i>", "group": "application", "value": 20, "desc": "通过Model Context Protocol连接外部工具和服务的网关组件，实现Agent与工具交互。", "category": "application", "difficulty": "intermediate"}, {"id": "c3", "label": "Docker cagent", "title": "<b>Docker cagent</b><br>声明式YAML多Agent运行时，无需手写代码即可定义和运行AI Agent。<br><i>实际应用</i>", "group": "application", "value": 12, "desc": "声明式YAML多Agent运行时，无需手写代码即可定义和运行AI Agent。", "category": "application", "difficulty": "basic"}, {"id": "c4", "label": "Docker Offload", "title": "<b>Docker Offload</b><br>提供GPU加速云端环境的工具，用于提升模型推理性能。<br><i>实际应用</i>", "group": "application", "value": 20, "desc": "提供GPU加速云端环境的工具，用于提升模型推理性能。", "category": "application", "difficulty": "intermediate"}, {"id": "c5", "label": "Docker Compose", "title": "<b>Docker Compose</b><br>定义和运行多容器AI应用的统一编排工具，支持一键启动完整Agent架构。<br><i>实际应用</i>", "group": "application", "value": 12, "desc": "定义和运行多容器AI应用的统一编排工具，支持一键启动完整Agent架构。", "category": "application", "difficulty": "basic"}, {"id": "c6", "label": "零代码Agent方案", "title": "<b>零代码Agent方案</b><br>使用Docker cagent通过YAML声明式定义Agent，无需编写代码即可创建多角色Agent。<br><i>例子案例</i>", "group": "example", "value": 12, "desc": "使用Docker cagent通过YAML声明式定义Agent，无需编写代码即可创建多角色Agent。", "category": "example", "difficulty": "basic"}, {"id": "c7", "label": "自定义Agent方案", "title": "<b>自定义Agent方案</b><br>适合Python开发者，通过Docker Model Runner和HTTP请求编写自定义Agent逻辑。<br><i>例子案例</i>", "group": "example", "value": 20, "desc": "适合Python开发者，通过Docker Model Runner和HTTP请求编写自定义Agent逻辑。", "category": "example", "difficulty": "intermediate"}, {"id": "c8", "label": "多服务Agent架构", "title": "<b>多服务Agent架构</b><br>使用Docker Compose集成模型、工具网关和Web UI的完整Agent应用方案。<br><i>例子案例</i>", "group": "example", "value": 30, "desc": "使用Docker Compose集成模型、工具网关和Web UI的完整Agent应用方案。", "category": "example", "difficulty": "advanced"}, {"id": "c9", "label": "Goose简易Agent", "title": "<b>Goose简易Agent</b><br>基于Goose开源框架和Docker工具链的简易AI助手方案，提供浏览器界面。<br><i>例子案例</i>", "group": "example", "value": 20, "desc": "基于Goose开源框架和Docker工具链的简易AI助手方案，提供浏览器界面。", "category": "example", "difficulty": "intermediate"}, {"id": "c10", "label": "MCP协议", "title": "<b>MCP协议</b><br>Model Context Protocol，用于连接Agent与外部工具和服务的通信协议。<br><i>原理规律</i>", "group": "principle", "value": 20, "desc": "Model Context Protocol，用于连接Agent与外部工具和服务的通信协议。", "category": "principle", "difficulty": "intermediate"}, {"id": "c11", "label": "安全沙盒", "title": "<b>安全沙盒</b><br>Agent生成代码在隔离容器中运行的安全机制，可禁用网络防止数据泄露。<br><i>原理规律</i>", "group": "principle", "value": 30, "desc": "Agent生成代码在隔离容器中运行的安全机制，可禁用网络防止数据泄露。", "category": "principle", "difficulty": "advanced"}, {"id": "c12", "label": "混合AI模式", "title": "<b>混合AI模式</b><br>本地小模型处理常规任务，远程大模型处理复杂推理，可降低5至30倍成本。<br><i>原理规律</i>", "group": "principle", "value": 30, "desc": "本地小模型处理常规任务，远程大模型处理复杂推理，可降低5至30倍成本。", "category": "principle", "difficulty": "advanced"}, {"id": "c13", "label": "硬件要求", "title": "<b>硬件要求</b><br>不同模型对显存和存储的需求，从1GB到16GB以上显存不等。<br><i>概念定义</i>", "group": "definition", "value": 12, "desc": "不同模型对显存和存储的需求，从1GB到16GB以上显存不等。", "category": "definition", "difficulty": "basic"}, {"id": "c14", "label": "推荐学习路径", "title": "<b>推荐学习路径</b><br>从安装Docker Desktop到自定义YAML配置的逐步学习路线。<br><i>流程步骤</i>", "group": "process", "value": 12, "desc": "从安装Docker Desktop到自定义YAML配置的逐步学习路线。", "category": "process", "difficulty": "basic"}], "edges": [{"id": "c1_c7", "from": "c1", "to": "c7", "label": "构成自定义Agent方案", "arrows": "to", "relType": "part_of"}, {"id": "c2_c10", "from": "c2", "to": "c10", "label": "基于MCP协议", "arrows": "to", "relType": "relates_to"}, {"id": "c3_c6", "from": "c3", "to": "c6", "label": "实现零代码Agent方案", "arrows": "to", "relType": "part_of"}, {"id": "c5_c8", "from": "c5", "to": "c8", "label": "实现多服务Agent架构", "arrows": "to", "relType": "part_of"}, {"id": "c9_c1", "from": "c9", "to": "c1", "label": "使用Docker Model Runner", "arrows": "to", "relType": "part_of"}, {"id": "c9_c2", "from": "c9", "to": "c2", "label": "使用Docker MCP Gateway", "arrows": "to", "relType": "part_of"}, {"id": "c10_c2", "from": "c10", "to": "c2", "label": "作为网关协议", "arrows": "to", "relType": "relates_to"}, {"id": "c11_c8", "from": "c11", "to": "c8", "label": "应用于多服务架构", "arrows": "to", "relType": "relates_to"}, {"id": "c12_c1", "from": "c12", "to": "c1", "label": "优化模型运行", "arrows": "to", "relType": "relates_to"}, {"id": "c13_c1", "from": "c13", "to": "c1", "label": "决定模型选择", "arrows": "to", "relType": "relates_to"}, {"id": "c14_c1", "from": "c14", "to": "c1", "label": "从安装开始", "arrows": "to", "relType": "prerequisite_of"}, {"id": "c14_c3", "from": "c14", "to": "c3", "label": "进阶使用cagent", "arrows": "to", "relType": "leads_to"}, {"id": "c14_c5", "from": "c14", "to": "c5", "label": "学习Compose架构", "arrows": "to", "relType": "leads_to"}, {"id": "c6_c8", "from": "c6", "to": "c8", "label": "零代码与多服务对比", "arrows": "to", "relType": "contrasts_with"}, {"id": "c7_c6", "from": "c7", "to": "c6", "label": "自定义与零代码对比", "arrows": "to", "relType": "contrasts_with"}]};
+var groupNames = {"definition": "概念定义", "principle": "原理规律", "example": "例子案例", "application": "实际应用", "theory": "理论学派", "person": "人物学者", "event": "历史事件", "process": "流程步骤", "other": "其他"};
+var groupColors = {"definition": "#5b9bd5", "principle": "#ed7d31", "example": "#70ad47", "application": "#ffc000", "theory": "#9b59b6", "person": "#e74c3c", "event": "#1abc9c", "process": "#3498db", "other": "#95a5a6"};
+var entryNodeIds = new Set(["c13", "c9", "c12", "c14", "c11", "c3", "c4", "c5", "c6", "c1"]);
+var adjacencyMap = {"c1": ["c7", "c9", "c12", "c13", "c14"], "c2": ["c10", "c9", "c10"], "c3": ["c6", "c14"], "c4": [], "c5": ["c8", "c14"], "c6": ["c3", "c8", "c7"], "c7": ["c1", "c6"], "c8": ["c5", "c11", "c6"], "c9": ["c1", "c2"], "c10": ["c2", "c2"], "c11": ["c8"], "c12": ["c1"], "c13": ["c1"], "c14": ["c1", "c3", "c5"]};
+
+var nodesDS = new vis.DataSet(rawData.nodes);
+var edgesDS = new vis.DataSet(rawData.edges);
+
+// ── State ──
+var currentMode = 'layer';
+var focusNodeId = null;
+var expandedNodes = new Set(entryNodeIds);
+var layerVisibility = {};
+var searchQuery = '';
+
+// ── Network ──
+var container = document.getElementById('mynetwork');
+var baseNodeSize = 18;
+var baseOptions = {
+  nodes: {
+    shape: "dot", size: baseNodeSize,
+    font: { size:13, color:"#4A4A4A", face:"-apple-system, PingFang SC, Microsoft YaHei, sans-serif", strokeWidth:2, strokeColor:"#FFFFFF" },
+    borderWidth: 2.5,
+    shadow: { enabled:true, size:6, color:"rgba(0,0,0,0.08)" },
+  },
+  edges: {
+    width: 1.8,
+    color: { color:"#D4CCC4", highlight:"#F26B1D" },
+    smooth: { type:"continuous" },
+    font: { size:10, color:"#999", background:"#FFFFFF", strokeWidth:2, strokeColor:"#FFFFFF" },
+  },
+  physics: {
+    solver: "barnesHut",
+    barnesHut: {
+      gravitationalConstant: -3000,
+      centralGravity: 0.5,
+      springLength: 200,
+      springConstant: 0.02,
+      damping: 0.3,
+      avoidOverlap: 0.3,
+    },
+    maxVelocity: 6,
+    minVelocity: 0.5,
+    stabilization: { iterations: 200, fit: true },
+  },
+  interaction: { hover:true, tooltipDelay:150, zoomView:true, dragView:true },
+  groups: {"definition": {"color": {"background": "#5b9bd5", "border": "#5b9bd5", "highlight": {"background": "#5b9bd5", "border": "#5b9bd5"}}}, "principle": {"color": {"background": "#ed7d31", "border": "#ed7d31", "highlight": {"background": "#ed7d31", "border": "#ed7d31"}}}, "example": {"color": {"background": "#70ad47", "border": "#70ad47", "highlight": {"background": "#70ad47", "border": "#70ad47"}}}, "application": {"color": {"background": "#ffc000", "border": "#ffc000", "highlight": {"background": "#ffc000", "border": "#ffc000"}}}, "theory": {"color": {"background": "#9b59b6", "border": "#9b59b6", "highlight": {"background": "#9b59b6", "border": "#9b59b6"}}}, "person": {"color": {"background": "#e74c3c", "border": "#e74c3c", "highlight": {"background": "#e74c3c", "border": "#e74c3c"}}}, "event": {"color": {"background": "#1abc9c", "border": "#1abc9c", "highlight": {"background": "#1abc9c", "border": "#1abc9c"}}}, "process": {"color": {"background": "#3498db", "border": "#3498db", "highlight": {"background": "#3498db", "border": "#3498db"}}}, "other": {"color": {"background": "#95a5a6", "border": "#95a5a6", "highlight": {"background": "#95a5a6", "border": "#95a5a6"}}}},
+};
+var network = new vis.Network(container, {nodes:nodesDS, edges:edgesDS}, baseOptions);
+
+// ── Legend ──
+(function() {
+  var groups = {};
+  nodesDS.forEach(function(n) { groups[n.group] = (groups[n.group]||0)+1; });
+  document.getElementById('legend').innerHTML = Object.keys(groups).map(function(g) {
+    var color = groupColors[g] || "#888";
+    return '<div class="legend-item"><span class="legend-dot" style="background:'+color+'"></span>'+(groupNames[g]||g)+' ('+groups[g]+')</div>';
+  }).join("");
+})();
+
+// ── Sidebar ──
+function openSidebar(nodeId) {
+  var node = nodesDS.get(nodeId);
+  if (!node) return;
+  document.getElementById('node-name').textContent = node.label;
+  document.getElementById('node-category').textContent = groupNames[node.group] || node.group;
+  document.getElementById('node-desc').textContent = node.desc || '';
+
+  var related = edgesDS.get({ filter: function(e) { return e.from===nodeId || e.to===nodeId; } });
+  var html = related.map(function(e) {
+    var otherId = e.from===nodeId ? e.to : e.from;
+    var other = nodesDS.get(otherId);
+    var dir = e.from===nodeId ? '&#8594;' : '&#8592;';
+    return '<div class="rel-item"><span class="rel-dir">'+dir+'</span><span class="rel-label">'+(e.label||'')+'</span> '+(other?other.label:otherId)+'</div>';
+  }).join("");
+  document.getElementById('node-related').innerHTML = html || '<div style="color:#C0B8B0">无关联概念</div>';
+  document.getElementById('sidebar').classList.add('open');
+}
+
+function closeSidebar() { document.getElementById('sidebar').classList.remove('open'); }
+document.getElementById('close-btn').addEventListener('click', closeSidebar);
+
+// ── Click handler ──
+network.on('click', function(params) {
+  var nodeId = params.nodes[0];
+
+  if (currentMode === 'focus') {
+    if (nodeId) { enterFocus(nodeId); }
+    else { exitFocus(); }
+    return;
+  }
+
+  if (currentMode === 'explore' && nodeId) {
+    toggleExploreNode(nodeId);
+    return;
+  }
+
+  if (nodeId) { openSidebar(nodeId); }
+});
+
+// ═══════════════════════════════
+// MODE SWITCHING
+// ═══════════════════════════════
+function switchMode(mode) {
+  currentMode = mode;
+  focusNodeId = null;
+  document.getElementById('focus-indicator').classList.remove('show');
+
+  ['layer','focus','explore'].forEach(function(m) {
+    var btn = document.getElementById('btn-'+m);
+    if (btn) btn.classList.toggle('active', m===mode);
+  });
+
+  // Reset all nodes & edges to defaults
+  nodesDS.forEach(function(n) {
+    var nc = groupColors[n.group] || '#888';
+    nodesDS.update({ id:n.id, hidden:false, size:baseNodeSize, opacity:1,
+      color:{ background:nc, border:nc, highlight:{ background:nc, border:nc } },
+      font:{ size:13, color:"#4A4A4A", strokeWidth:2, strokeColor:"#FFF" }, borderWidth:2.5 });
+  });
+  edgesDS.forEach(function(e) {
+    edgesDS.update({ id:e.id, hidden:false, width:baseOptions.edges.width, color:baseOptions.edges.color });
+  });
+
+  if (mode === 'layer') {
+    buildLayerPanel();
+    network.setOptions({ physics:{ enabled:true } });
+    network.fit();
+  }
+  if (mode === 'focus') {
+    buildFocusPanel();
+    network.setOptions({ physics:{ enabled:true } });
+    network.fit();
+  }
+  if (mode === 'explore') {
+    buildExplorePanel();
+    network.setOptions({ physics:{ enabled:true } });
+    network.fit();
+    // Disable physics after initial layout settles
+    network.once('stabilized', function() {
+      if (currentMode === 'explore') network.setOptions({ physics:{ enabled:false } });
+    });
+    setTimeout(function() {
+      if (currentMode === 'explore') network.setOptions({ physics:{ enabled:false } });
+    }, 2500);
+  }
+
+  if (mode !== 'explore') applySearch();
+  else applyExploreVisibility();
+}
+
+// ═══════════════════════════════
+// MODE 1: LAYER
+// ═══════════════════════════════
+function buildLayerPanel() {
+  var counts = {};
+  nodesDS.forEach(function(n) { counts[n.group] = (counts[n.group]||0)+1; });
+  var cats = Object.keys(counts).sort();
+  cats.forEach(function(c) { if (!(c in layerVisibility)) layerVisibility[c] = true; });
+
+  document.getElementById('panel').innerHTML =
+    '<h3>图层筛选</h3>' +
+    cats.map(function(c) {
+      return '<label class="layer-row">' +
+        '<input type="checkbox" '+(layerVisibility[c]?'checked':'')+' data-cat="'+c+'" onchange="toggleLayer(this.dataset.cat,this.checked)">' +
+        '<span class="layer-dot" style="background:'+(groupColors[c]||'#888')+'"></span>' +
+        (groupNames[c]||c) + '<span class="layer-count">'+counts[c]+'</span></label>';
+    }).join("") +
+    '<div class="panel-actions">' +
+      '<button id="btn-all-on">全部开启</button>' +
+      '<button id="btn-all-off">全部关闭</button>' +
+    '</div>';
+
+  document.getElementById('btn-all-on').addEventListener('click', function(){ setAllLayers(true); });
+  document.getElementById('btn-all-off').addEventListener('click', function(){ setAllLayers(false); });
+}
+
+function toggleLayer(cat, visible) {
+  layerVisibility[cat] = visible;
+  applyLayerVisibility();
+  applySearch();
+}
+
+function setAllLayers(visible) {
+  Object.keys(layerVisibility).forEach(function(c) { layerVisibility[c] = visible; });
+  buildLayerPanel();
+  applyLayerVisibility();
+  applySearch();
+}
+
+function applyLayerVisibility() {
+  var hiddenCats = new Set(Object.keys(layerVisibility).filter(function(c){ return !layerVisibility[c]; }));
+  nodesDS.forEach(function(n) {
+    nodesDS.update({ id:n.id, hidden:hiddenCats.has(n.group) });
+  });
+  edgesDS.forEach(function(e) {
+    var fn = nodesDS.get(e.from), tn = nodesDS.get(e.to);
+    edgesDS.update({ id:e.id, hidden: hiddenCats.has(fn?fn.group:'') || hiddenCats.has(tn?tn.group:'') });
+  });
+}
+
+// ═══════════════════════════════
+// MODE 2: FOCUS
+// ═══════════════════════════════
+function buildFocusPanel() {
+  document.getElementById('panel').innerHTML =
+    '<h3>焦点探索</h3>' +
+    '<p class="explore-info">点击任意概念节点，它居中放大，关联节点高亮环绕。<br><br>点击空白处或按 Esc 返回全景。</p>';
+}
+
+function enterFocus(nodeId) {
+  focusNodeId = nodeId;
+  document.getElementById('focus-indicator').classList.add('show');
+
+  var neighbors = new Set(adjacencyMap[nodeId] || []);
+  neighbors.add(nodeId);
+
+  nodesDS.forEach(function(n) {
+    if (n.id === nodeId) {
+      var c = groupColors[n.group] || '#F26B1D';
+      nodesDS.update({ id:n.id, size:40,
+        color:{ background:c, border:"#F26B1D", highlight:{ background:c, border:"#E06000" } },
+        font:{ size:17, color:"#2D2D2D", strokeWidth:3, strokeColor:"#FFF" }, borderWidth:4, hidden:false, opacity:1 });
+    } else if (neighbors.has(n.id)) {
+      var nc = groupColors[n.group] || '#888';
+      nodesDS.update({ id:n.id, size:22,
+        color:{ background:nc, border:"#F26B1D", highlight:{ background:nc, border:"#E06000" } },
+        borderWidth:2.5, hidden:false, opacity:1 });
+    } else {
+      nodesDS.update({ id:n.id, opacity:0.06, size:6 });
+    }
+  });
+
+  edgesDS.forEach(function(e) {
+    if (e.from===nodeId || e.to===nodeId) {
+      edgesDS.update({ id:e.id, width:3.5, color:{ color:"#F26B1D", highlight:"#E06000" }, hidden:false });
+    } else {
+      edgesDS.update({ id:e.id, hidden:true });
+    }
+  });
+
+  network.fit({ nodes: Array.from(neighbors) });
+}
+
+function exitFocus() {
+  focusNodeId = null;
+  document.getElementById('focus-indicator').classList.remove('show');
+
+  nodesDS.forEach(function(n) {
+    var nc = groupColors[n.group] || '#888';
+    nodesDS.update({ id:n.id, size:baseNodeSize, opacity:1,
+      color:{ background:nc, border:nc, highlight:{ background:nc, border:nc } },
+      font:{ size:13, color:"#4A4A4A", strokeWidth:2, strokeColor:"#FFF" }, borderWidth:2.5 });
+  });
+  edgesDS.forEach(function(e) {
+    edgesDS.update({ id:e.id, hidden:false, width:baseOptions.edges.width, color:baseOptions.edges.color });
+  });
+
+  network.fit();
+}
+
+// ═══════════════════════════════
+// MODE 3: EXPLORE (static, draggable graph)
+// ═══════════════════════════════
+function buildExplorePanel() {
+  document.getElementById('panel').innerHTML =
+    '<h3>渐进探索</h3>' +
+    '<p class="explore-info">静态图谱可自由拖拽。<br>从入口概念开始，点击逐步展开关联。<br>+N 表示还有未展开的连接。</p>' +
+    '<div class="explore-actions">' +
+      '<button id="btn-expand-all">全部展开</button>' +
+      '<button id="btn-reset">重置</button>' +
+    '</div>';
+  document.getElementById('btn-expand-all').addEventListener('click', expandAllNodes);
+  document.getElementById('btn-reset').addEventListener('click', resetExplore);
+}
+
+function applyExploreVisibility() {
+  nodesDS.forEach(function(n) {
+    nodesDS.update({ id:n.id, hidden:!expandedNodes.has(n.id) });
+  });
+  edgesDS.forEach(function(e) {
+    edgesDS.update({ id:e.id, hidden:!expandedNodes.has(e.from) || !expandedNodes.has(e.to) });
+  });
+
+  // Badge: +N for hidden neighbors
+  nodesDS.forEach(function(n) {
+    if (!expandedNodes.has(n.id)) return;
+    var hiddenCount = (adjacencyMap[n.id]||[]).filter(function(a){ return !expandedNodes.has(a); }).length;
+    var baseLabel = n.label.replace(/ \+\d+$/, '');
+    nodesDS.update({ id:n.id, label: hiddenCount>0 ? baseLabel+' +'+hiddenCount : baseLabel });
+  });
+}
+
+function toggleExploreNode(nodeId) {
+  if (!expandedNodes.has(nodeId)) return;
+  var hidden = (adjacencyMap[nodeId]||[]).filter(function(a){ return !expandedNodes.has(a); });
+  if (hidden.length === 0) return;
+  hidden.forEach(function(a){ expandedNodes.add(a); });
+  applyExploreVisibility();
+  applySearch();
+}
+
+function expandAllNodes() {
+  nodesDS.forEach(function(n){ expandedNodes.add(n.id); });
+  applyExploreVisibility();
+  applySearch();
+}
+
+function resetExplore() {
+  expandedNodes = new Set(entryNodeIds);
+  applyExploreVisibility();
+  applySearch();
+}
+
+// ═══════════════════════════════
+// SEARCH
+// ═══════════════════════════════
+document.getElementById('search').addEventListener('input', function(e) {
+  searchQuery = e.target.value.toLowerCase().trim();
+  applySearch();
+});
+
+function applySearch() {
+  if (!searchQuery) {
+    // Clear search — restore mode visibility
+    if (currentMode==='layer')  { applyLayerVisibility(); }
+    if (currentMode==='focus')  { if (focusNodeId) enterFocus(focusNodeId); else exitFocus(); }
+    if (currentMode==='explore') { applyExploreVisibility(); }
+    return;
+  }
+
+  // Find matching nodes
+  var matched = new Set();
+  nodesDS.forEach(function(n) {
+    var label = (n.label||'').toLowerCase().replace(/ \+\d+$/, '');
+    var desc = (n.desc||'').toLowerCase();
+    if (label.includes(searchQuery) || desc.includes(searchQuery)) matched.add(n.id);
+  });
+
+  nodesDS.forEach(function(n) {
+    nodesDS.update({ id:n.id, hidden:!matched.has(n.id) });
+  });
+  edgesDS.forEach(function(e) {
+    edgesDS.update({ id:e.id, hidden:!matched.has(e.from) || !matched.has(e.to) });
+  });
+
+  if (matched.size > 0) network.fit();
+}
+
+// ═══════════════════════════════
+// UTILS
+// ═══════════════════════════════
+document.getElementById('export-btn').addEventListener('click', function() {
+  var canvas = document.querySelector('#mynetwork canvas');
+  if (!canvas) { return; }
+  var link = document.createElement('a');
+  link.download = 'Docker容器本地部署AI Agent完全指南.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeSidebar();
+    if (currentMode==='focus') { exitFocus(); }
+  }
+});
+
+// ── Init ──
+buildLayerPanel();
+
+document.getElementById('btn-layer').addEventListener('click', function(){ switchMode('layer'); });
+document.getElementById('btn-focus').addEventListener('click', function(){ switchMode('focus'); });
+document.getElementById('btn-explore').addEventListener('click', function(){ switchMode('explore'); });
+</script>
+</body>
+</html>

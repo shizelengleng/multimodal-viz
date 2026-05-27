@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=75.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "multimodal-viz"
+version = "0.5.0"
+requires-python = ">=3.10"
+
+[tool.setuptools]
+packages = ["core", "gui", "gui.widgets", "gui.pages", "app"]
+
+[project.scripts]
+multimodal-viz = "core.cli:main"

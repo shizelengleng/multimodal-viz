@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习理论流派与教育应用</title>
+<script src="https://unpkg.com/vis-network@9.1.6/dist/vis-network.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #0f0f14; color: #e0e0e0; overflow: hidden; }
+  #mynetwork { width: 100vw; height: 100vh; }
+  #sidebar {
+    position: fixed; right: 0; top: 0; width: 360px; height: 100vh;
+    background: rgba(22,22,32,0.95); backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(255,255,255,0.08);
+    padding: 32px 24px; overflow-y: auto;
+    transform: translateX(100%); transition: transform 0.3s ease;
+    z-index: 10;
+  }
+  #sidebar.open { transform: translateX(0); }
+  #sidebar h2 { font-size: 22px; margin-bottom: 8px; color: #fff; }
+  #sidebar .category { font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: #888; margin-bottom: 16px; }
+  #sidebar .description { font-size: 15px; line-height: 1.7; color: #bbb; margin-bottom: 24px; }
+  #sidebar .related h3 { font-size: 14px; color: #888; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.08em; }
+  #sidebar .related .rel-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-size: 14px;
+  }
+  #sidebar .related .rel-type { color: #666; font-size: 12px; }
+  #search {
+    position: fixed; top: 20px; left: 20px; z-index: 5;
+    background: rgba(22,22,32,0.9); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 12px 16px; color: #e0e0e0;
+    font-size: 14px; width: 280px; outline: none;
+    backdrop-filter: blur(10px);
+    transition: border-color 0.2s;
+  }
+  #search:focus { border-color: rgba(100,140,255,0.5); }
+  #search::placeholder { color: #555; }
+  #legend {
+    position: fixed; bottom: 24px; left: 24px; z-index: 5;
+    display: flex; gap: 16px; flex-wrap: wrap;
+    background: rgba(22,22,32,0.85); backdrop-filter: blur(10px);
+    border-radius: 12px; padding: 12px 16px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #999; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+  #close-btn {
+    position: absolute; top: 16px; right: 16px;
+    background: none; border: none; color: #888; font-size: 20px;
+    cursor: pointer; width: 32px; height: 32px; display: flex;
+    align-items: center; justify-content: center; border-radius: 50%;
+  }
+  #close-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+  #export-btn {
+    position: fixed; bottom: 24px; right: 24px; z-index: 5;
+    background: rgba(100,140,255,0.2); border: 1px solid rgba(100,140,255,0.3);
+    color: #aac; border-radius: 8px; padding: 8px 16px;
+    font-size: 13px; cursor: pointer;
+  }
+  #export-btn:hover { background: rgba(100,140,255,0.35); }
+</style>
+</head>
+<body>
+
+<input id="search" type="text" placeholder="搜索概念..." />
+
+<div id="legend"></div>
+<button id="export-btn" onclick="exportPNG()">导出 PNG</button>
+
+<div id="mynetwork"></div>
+
+<div id="sidebar">
+  <button id="close-btn" onclick="closeSidebar()">&times;</button>
+  <h2 id="node-name"></h2>
+  <div class="category" id="node-category"></div>
+  <div class="description" id="node-desc"></div>
+  <div class="related">
+    <h3>关联概念</h3>
+    <div id="node-related"></div>
+  </div>
+</div>
+
+<script>
+  var data = {"nodes": [{"id": "c1", "label": "学习理论", "title": "<b>学习理论</b><br>教育心理学的核心内容，解释学习如何发生的系统理论。<br><i>概念定义</i>", "group": "definition", "value": 12}, {"id": "c2", "label": "行为主义", "title": "<b>行为主义</b><br>强调可观察行为变化，认为学习是刺激-反应联结的形成过程。<br><i>理论学派</i>", "group": "theory", "value": 12}, {"id": "c3", "label": "华生", "title": "<b>华生</b><br>行为主义学习理论的创立者。<br><i>人物学者</i>", "group": "person", "value": 12}, {"id": "c4", "label": "斯金纳", "title": "<b>斯金纳</b><br>发展操作性条件反射理论，设计程序教学机器，对教育技术影响深远。<br><i>人物学者</i>", "group": "person", "value": 20}, {"id": "c5", "label": "操作性条件反射", "title": "<b>操作性条件反射</b><br>通过强化和惩罚塑造行为的理论，正强化增加行为频率。<br><i>原理规律</i>", "group": "principle", "value": 20}, {"id": "c6", "label": "认知主义", "title": "<b>认知主义</b><br>关注学习者内部心理过程，将学习视为信息加工和知识建构。<br><i>理论学派</i>", "group": "theory", "value": 12}, {"id": "c7", "label": "皮亚杰", "title": "<b>皮亚杰</b><br>提出认知发展阶段理论，包括感知运动、前运算、具体运算和形式运算阶段。<br><i>人物学者</i>", "group": "person", "value": 20}, {"id": "c8", "label": "布鲁纳", "title": "<b>布鲁纳</b><br>提出发现学习法，强调学习者主动探索知识结构。<br><i>人物学者</i>", "group": "person", "value": 20}, {"id": "c9", "label": "奥苏贝尔", "title": "<b>奥苏贝尔</b><br>提出有意义学习理论，区分机械学习和有意义学习。<br><i>人物学者</i>", "group": "person", "value": 20}, {"id": "c10", "label": "建构主义", "title": "<b>建构主义</b><br>认为知识由学习者基于已有经验主动建构，而非客观存在。<br><i>理论学派</i>", "group": "theory", "value": 12}, {"id": "c11", "label": "维果茨基", "title": "<b>维果茨基</b><br>提出社会建构主义和最近发展区理论，强调社会文化环境的作用。<br><i>人物学者</i>", "group": "person", "value": 20}, {"id": "c12", "label": "最近发展区", "title": "<b>最近发展区</b><br>教学应走在发展前面，在帮助下儿童能达到更高发展水平。<br><i>原理规律</i>", "group": "principle", "value": 20}, {"id": "c13", "label": "加涅", "title": "<b>加涅</b><br>综合行为主义和认知主义，提出学习条件理论和学习结果分类。<br><i>人物学者</i>", "group": "person", "value": 20}, {"id": "c14", "label": "学习结果分类", "title": "<b>学习结果分类</b><br>将学习结果分为言语信息、智慧技能、认知策略、态度和动作技能五类。<br><i>概念定义</i>", "group": "definition", "value": 30}, {"id": "c15", "label": "九段教学法", "title": "<b>九段教学法</b><br>加涅提出的教学设计步骤，广泛应用于教学设计中。<br><i>流程步骤</i>", "group": "process", "value": 30}, {"id": "c16", "label": "教育技术应用", "title": "<b>教育技术应用</b><br>学习理论在程序教学、CAI、ITS、PBL等教学技术中的应用。<br><i>实际应用</i>", "group": "application", "value": 20}, {"id": "c17", "label": "联通主义", "title": "<b>联通主义</b><br>面向数字时代的学习理论，强调节点和连接的重要性。<br><i>理论学派</i>", "group": "theory", "value": 30}, {"id": "c18", "label": "乔治·西蒙斯", "title": "<b>乔治·西蒙斯</b><br>联通主义的提出者，认为管道比内容更重要。<br><i>人物学者</i>", "group": "person", "value": 30}], "edges": [{"from": "c1", "to": "c2", "label": "包含流派", "arrows": "to"}, {"from": "c1", "to": "c6", "label": "包含流派", "arrows": "to"}, {"from": "c1", "to": "c10", "label": "包含流派", "arrows": "to"}, {"from": "c2", "to": "c3", "label": "由华生创立", "arrows": "to"}, {"from": "c2", "to": "c4", "label": "由斯金纳发展", "arrows": "to"}, {"from": "c4", "to": "c5", "label": "提出操作性条件反射", "arrows": "to"}, {"from": "c6", "to": "c7", "label": "代表人物皮亚杰", "arrows": "to"}, {"from": "c6", "to": "c8", "label": "代表人物布鲁纳", "arrows": "to"}, {"from": "c6", "to": "c9", "label": "代表人物奥苏贝尔", "arrows": "to"}, {"from": "c10", "to": "c11", "label": "代表人物维果茨基", "arrows": "to"}, {"from": "c11", "to": "c12", "label": "提出最近发展区", "arrows": "to"}, {"from": "c13", "to": "c14", "label": "提出学习结果分类", "arrows": "to"}, {"from": "c13", "to": "c15", "label": "提出九段教学法", "arrows": "to"}, {"from": "c2", "to": "c16", "label": "影响程序教学和CAI", "arrows": "to"}, {"from": "c6", "to": "c16", "label": "推动智能教学系统", "arrows": "to"}, {"from": "c10", "to": "c16", "label": "支持PBL和认知学徒制", "arrows": "to"}, {"from": "c17", "to": "c18", "label": "由西蒙斯提出", "arrows": "to"}, {"from": "c6", "to": "c2", "label": "批判行为主义", "arrows": "to"}, {"from": "c10", "to": "c6", "label": "不同于认知主义", "arrows": "to"}, {"from": "c13", "to": "c2", "label": "综合行为主义观点", "arrows": "to"}, {"from": "c13", "to": "c6", "label": "综合认知主义观点", "arrows": "to"}]};
+
+  var categories = {"definition": {"color": {"background": "#5b9bd5", "border": "#5b9bd5", "highlight": {"background": "#5b9bd5", "border": "#5b9bd5"}}}, "principle": {"color": {"background": "#ed7d31", "border": "#ed7d31", "highlight": {"background": "#ed7d31", "border": "#ed7d31"}}}, "example": {"color": {"background": "#70ad47", "border": "#70ad47", "highlight": {"background": "#70ad47", "border": "#70ad47"}}}, "application": {"color": {"background": "#ffc000", "border": "#ffc000", "highlight": {"background": "#ffc000", "border": "#ffc000"}}}, "theory": {"color": {"background": "#9b59b6", "border": "#9b59b6", "highlight": {"background": "#9b59b6", "border": "#9b59b6"}}}, "person": {"color": {"background": "#e74c3c", "border": "#e74c3c", "highlight": {"background": "#e74c3c", "border": "#e74c3c"}}}, "event": {"color": {"background": "#1abc9c", "border": "#1abc9c", "highlight": {"background": "#1abc9c", "border": "#1abc9c"}}}, "process": {"color": {"background": "#3498db", "border": "#3498db", "highlight": {"background": "#3498db", "border": "#3498db"}}}, "other": {"color": {"background": "#95a5a6", "border": "#95a5a6", "highlight": {"background": "#95a5a6", "border": "#95a5a6"}}}};
+
+  var options = {
+    nodes: {
+      shape: "dot",
+      size: 20,
+      font: { size: 14, color: "#ccc", face: "-apple-system, sans-serif" },
+      borderWidth: 2,
+      shadow: { enabled: true, size: 8 },
+    },
+    edges: {
+      width: 1.5,
+      color: { color: "rgba(150,150,180,0.4)", highlight: "rgba(180,180,220,0.8)" },
+      smooth: { type: "continuous" },
+      font: { size: 11, color: "#888", background: "rgba(15,15,20,0.7)" },
+    },
+    physics: {
+      forceAtlas2Based: {
+        gravitationalConstant: -50,
+        centralGravity: 0.01,
+        springLength: 200,
+        springConstant: 0.08,
+      },
+      maxVelocity: 50,
+      solver: "forceAtlas2Based",
+      stabilization: { iterations: 200 },
+    },
+    interaction: {
+      hover: true,
+      tooltipDelay: 200,
+      zoomView: true,
+      dragView: true,
+    },
+    groups: {"definition": {"color": {"background": "#5b9bd5", "border": "#5b9bd5", "highlight": {"background": "#5b9bd5", "border": "#5b9bd5"}}}, "principle": {"color": {"background": "#ed7d31", "border": "#ed7d31", "highlight": {"background": "#ed7d31", "border": "#ed7d31"}}}, "example": {"color": {"background": "#70ad47", "border": "#70ad47", "highlight": {"background": "#70ad47", "border": "#70ad47"}}}, "application": {"color": {"background": "#ffc000", "border": "#ffc000", "highlight": {"background": "#ffc000", "border": "#ffc000"}}}, "theory": {"color": {"background": "#9b59b6", "border": "#9b59b6", "highlight": {"background": "#9b59b6", "border": "#9b59b6"}}}, "person": {"color": {"background": "#e74c3c", "border": "#e74c3c", "highlight": {"background": "#e74c3c", "border": "#e74c3c"}}}, "event": {"color": {"background": "#1abc9c", "border": "#1abc9c", "highlight": {"background": "#1abc9c", "border": "#1abc9c"}}}, "process": {"color": {"background": "#3498db", "border": "#3498db", "highlight": {"background": "#3498db", "border": "#3498db"}}}, "other": {"color": {"background": "#95a5a6", "border": "#95a5a6", "highlight": {"background": "#95a5a6", "border": "#95a5a6"}}}},
+  };
+
+  var container = document.getElementById("mynetwork");
+  var network = new vis.Network(container, data, options);
+
+  // Legend
+  var legend = document.getElementById("legend");
+  var groups = data.nodes.reduce(function(acc, n) {
+    if (!acc[n.group]) acc[n.group] = 0;
+    acc[n.group]++;
+    return acc;
+  }, {});
+  var groupNames = {"definition": "概念定义", "principle": "原理规律", "example": "例子案例", "application": "实际应用", "theory": "理论学派", "person": "人物学者", "event": "历史事件", "process": "流程步骤", "other": "其他"};
+  var groupColors = {"definition": "#5b9bd5", "principle": "#ed7d31", "example": "#70ad47", "application": "#ffc000", "theory": "#9b59b6", "person": "#e74c3c", "event": "#1abc9c", "process": "#3498db", "other": "#95a5a6"};
+  legend.innerHTML = Object.keys(groups).map(function(g) {
+    var color = groupColors[g] || "#888";
+    var name = groupNames[g] || g;
+    return '<div class="legend-item"><span class="legend-dot" style="background:' + color + '"></span>' + name + ' (' + groups[g] + ')</div>';
+  }).join("");
+
+  // Click → sidebar
+  network.on("click", function(params) {
+    if (params.nodes.length > 0) {
+      var nodeId = params.nodes[0];
+      var node = data.nodes.find(function(n) { return n.id === nodeId; });
+      if (!node) return;
+
+      document.getElementById("node-name").textContent = node.label;
+      document.getElementById("node-category").textContent = groupNames[node.group] || node.group;
+      document.getElementById("node-desc").textContent = node.title.replace(/<[^>]*>/g, "");
+
+      // Related
+      var related = data.edges.filter(function(e) {
+        return e.from === nodeId || e.to === nodeId;
+      });
+      var relatedHtml = related.map(function(e) {
+        var otherId = e.from === nodeId ? e.to : e.from;
+        var otherNode = data.nodes.find(function(n) { return n.id === otherId; });
+        var otherName = otherNode ? otherNode.label : otherId;
+        var dir = e.from === nodeId ? "→" : "←";
+        return '<div class="rel-item"><span class="rel-type">' + dir + ' ' + (e.label || "") + '</span> ' + otherName + '</div>';
+      }).join("");
+      document.getElementById("node-related").innerHTML = relatedHtml || "<div style='color:#555'>无关联概念</div>";
+
+      document.getElementById("sidebar").classList.add("open");
+    }
+  });
+
+  // Search
+  document.getElementById("search").addEventListener("input", function(e) {
+    var q = e.target.value.toLowerCase();
+    if (!q) {
+      data.nodes.forEach(function(n) { data.nodes.update({ id: n.id, hidden: false }); });
+      data.edges.forEach(function(e) { data.edges.update({ id: e.id, hidden: false }); });
+      return;
+    }
+    var matchedIds = new Set();
+    data.nodes.forEach(function(n) {
+      if (n.label.toLowerCase().includes(q)) {
+        matchedIds.add(n.id);
+      }
+    });
+    data.nodes.forEach(function(n) {
+      data.nodes.update({ id: n.id, hidden: !matchedIds.has(n.id) });
+    });
+    data.edges.forEach(function(e) {
+      data.edges.update({
+        id: e.id,
+        hidden: !matchedIds.has(e.from) || !matchedIds.has(e.to),
+      });
+    });
+  });
+
+  function closeSidebar() {
+    document.getElementById("sidebar").classList.remove("open");
+  }
+
+  function exportPNG() {
+    var canvas = document.querySelector("#mynetwork canvas");
+    if (!canvas) { alert("无法导出"); return; }
+    var link = document.createElement("a");
+    link.download = "学习理论流派与教育应用.png";
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  }
+
+  document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") closeSidebar();
+  });
+</script>
+</body>
+</html>
